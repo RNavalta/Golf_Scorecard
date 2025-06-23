@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import React, { useState, useEffect } from 'react';
 import {
@@ -11,26 +12,91 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Button,
 } from 'react-native';
 
-const PARS = [4,4,3,5,4,4,3,5,4, 4,4,3,5,4,4,3,5,4];
+const PARS = [3,3,3,3,3,3,3,3,4, 4,3,3,3,4,3,3,3,4];
+const WHITE_YARDAGES = [162, 166, 111, 162, 154, 140, 137, 120, 259, 273, 200, 154, 164, 218, 87, 176, 134, 340];
 
 const CELL_WIDTH = 48; //width of each hole cell
 const NAME_WIDTH = 120; //width of player name cell
 const TOTAL_WIDTH = 60; //width of total score cell
+const STORAGE_KEY = 'golf_scorecard_state'; //key for AsyncStorage
 
-export default function ScorecardScreen({ route }) {
-  const { players } = route.params;
-  const [scores, setScores] = useState(
-    players.map(() => Array(18).fill(''))
-  );
+// export default function ScorecardScreen({ route }) { 
+//   const { players } = route.params;
+//   const [scores, setScores] = useState(
+//     players.map(() => Array(18).fill(''))
+//   );
+export default function ScorecardScreen({ route, navigation }) {
+  // Start with empty state
+  const [players, setPlayers] = useState(['', '', '', '']);
+  const [scores, setScores] = useState([
+    Array(18).fill(''),
+    Array(18).fill(''),
+    Array(18).fill(''),
+    Array(18).fill(''),
+  ]);
 
+  // Load saved state on mount
   useEffect(() => {
-    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE); // Lock to landscape mode
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+    loadGame();
     return () => {
       ScreenOrientation.unlockAsync();
     };
   }, []);
+
+  // Save state whenever players or scores change
+  useEffect(() => {
+    saveGame();
+  }, [players, scores]);
+
+  // Save to AsyncStorage
+  const saveGame = async () => {
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ players, scores })
+      );
+    } catch (e) {
+      console.log('Error saving game:', e);
+    }
+  };
+
+  // Load from AsyncStorage, or use route.params if no saved game
+  const loadGame = async () => {
+    try {
+      const value = await AsyncStorage.getItem(STORAGE_KEY);
+      if (value !== null) {
+        const saved = JSON.parse(value);
+        setPlayers(saved.players);
+        setScores(saved.scores);
+      } else if (route.params?.players) {
+        setPlayers(route.params.players);
+        setScores(route.params.players.map(() => Array(18).fill('')));
+      }
+    } catch (e) {
+      console.log('Error loading game:', e);
+    }
+  };
+
+// Optional: Reset state and clear AsyncStorage
+  const resetGame = async () => {
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    if (route.params?.players) {
+      setPlayers(route.params.players);
+      setScores(route.params.players.map(() => Array(18).fill('')));
+    } else {
+      setPlayers(['', '', '', '']);
+      setScores([
+        Array(18).fill(''),
+        Array(18).fill(''),
+        Array(18).fill(''),
+        Array(18).fill(''),
+      ]);
+    }
+  };
 
   const handleScoreChange = (playerIdx, holeIdx, value) => {
     const newScores = scores.map(arr => [...arr]);
@@ -41,66 +107,136 @@ export default function ScorecardScreen({ route }) {
   const getTotal = (arr, start, end) =>
     arr.slice(start, end).reduce((sum, val) => sum + (parseInt(val) || 0), 0);
 
+  // Function to get initials from a name
+  const getInitials = name =>
+  name
+    .split(' ')
+    .map(word => word[0]?.toUpperCase())
+    .join('');
+
+  // Function to determine the skins winner for each hole
+  const getSkinsWinners = () => {
+    return PARS.map((_, holeIdx) => {
+      // Gather all scores for this hole
+      const holeScores = scores.map(playerScores => parseInt(playerScores[holeIdx]) || null);
+      // Find the lowest score (ignoring empty)
+      const minScore = Math.min(...holeScores.filter(s => s !== null && !isNaN(s)));
+      // Count how many players have this score
+      const winners = holeScores
+        .map((score, idx) => (score === minScore ? idx : null))
+        .filter(idx => idx !== null);
+      // If only one player has the lowest score, return their initials
+      if (winners.length === 1) {
+        return getInitials(players[winners[0]]);
+      }
+      // Otherwise, no skin
+      return '';
+      });
+    };
+
+  const skinsWinners = getSkinsWinners();
+
   return (
     <SafeAreaView style={styles.safeArea}>  
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
       {/*Use TouchableWithoutFeedback to let users tap anywhere to dismiss the keyboard*/}
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <ScrollView horizontal>
-          <View style={styles.outerContainer}>
-            {/* Header Row: Hole Numbers */}
-            <View style={styles.row}>
-              <Text style={[styles.headerLeft, { width: NAME_WIDTH }]}></Text>
-              {PARS.map((_, holeIdx) => (
-                <Text key={holeIdx} style={[styles.header, { width: CELL_WIDTH }]}>{holeIdx + 1}</Text>
-              ))}
-              <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>F9</Text>
-              <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>B9</Text>
-              <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>Total</Text>
-            </View>
-            {/* Par Row */}
-            <View style={styles.row}>
-              <Text style={[styles.headerLeft, { width: NAME_WIDTH }]}>Par</Text>
-              {PARS.map((par, idx) => (
-                <Text key={idx} style={[styles.par, { width: CELL_WIDTH }]}>{par}</Text>
-              ))}
-              <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
-                {PARS.slice(0,9).reduce((a,b)=>a+b,0)}
-              </Text>
-              <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
-                {PARS.slice(9,18).reduce((a,b)=>a+b,0)}
-              </Text>
-              <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
-                {PARS.reduce((a,b)=>a+b,0)}
-              </Text>
-            </View>
-            {/* Player Rows */}
-            {players.map((player, playerIdx) => (
-              <View key={playerIdx} style={styles.row}>
-                <Text style={[styles.playerName, { width: NAME_WIDTH }]} numberOfLines={1} ellipsizeMode="tail">{player}</Text>
+          <ScrollView style={{ maxHeight: '100%' }}>
+            <View style={styles.outerContainer}>
+              {/* Header Row: Hole Numbers */}
+              <View style={styles.row}>
+                <Text style={[styles.headerLeft, { width: NAME_WIDTH }]}>Tee</Text>
                 {PARS.map((_, holeIdx) => (
-                  <TextInput
-                    key={holeIdx}
-                    style={[styles.input, { width: CELL_WIDTH }]}
-                    keyboardType="numeric"
-                    value={scores[playerIdx][holeIdx]}
-                    onChangeText={text => handleScoreChange(playerIdx, holeIdx, text)}
-                    maxLength={2}
-                  />
+                  <Text key={holeIdx} style={[styles.header, { width: CELL_WIDTH }]}>{holeIdx + 1}</Text>
+                ))}
+                <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>F9</Text>
+                <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>B9</Text>
+                <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>Total</Text>
+              </View>
+              {/* White Yardage Row */}
+              <View style={styles.row}>
+                <Text style={[styles.headerLeft, { width: NAME_WIDTH }]}>White</Text>
+                {WHITE_YARDAGES.map((yard, idx) => (
+                  <Text key={idx} style={[styles.yardage, { width: CELL_WIDTH }]}>{yard}</Text>
                 ))}
                 <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
-                  {getTotal(scores[playerIdx], 0, 9)}
+                  {WHITE_YARDAGES.slice(0,9).reduce((a,b)=>a+b,0)}
                 </Text>
                 <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
-                  {getTotal(scores[playerIdx], 9, 18)}
+                  {WHITE_YARDAGES.slice(9,18).reduce((a,b)=>a+b,0)}
                 </Text>
                 <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
-                  {getTotal(scores[playerIdx], 0, 18)}
+                  {WHITE_YARDAGES.reduce((a,b)=>a+b,0)}
                 </Text>
               </View>
-            ))}
-          </View>
+              {/* Par Row */}
+              <View style={styles.row}>
+                <Text style={[styles.headerLeft, { width: NAME_WIDTH }]}>Par</Text>
+                {PARS.map((par, idx) => (
+                  <Text key={idx} style={[styles.par, { width: CELL_WIDTH }]}>{par}</Text>
+                ))}
+                <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
+                  {PARS.slice(0,9).reduce((a,b)=>a+b,0)}
+                </Text>
+                <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
+                  {PARS.slice(9,18).reduce((a,b)=>a+b,0)}
+                </Text>
+                <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
+                  {PARS.reduce((a,b)=>a+b,0)}
+                </Text>
+              </View>
+              {/* Player Rows */}
+              {players.map((player, playerIdx) => (
+                <View key={playerIdx} style={styles.row}>
+                  <Text style={[styles.playerName, { width: NAME_WIDTH }]} numberOfLines={1} ellipsizeMode="tail">{player}</Text>
+                  {PARS.map((_, holeIdx) => (
+                    <TextInput
+                      key={holeIdx}
+                      style={[styles.input, { width: CELL_WIDTH }]}
+                      keyboardType="numeric"
+                      value={scores[playerIdx][holeIdx]}
+                      onChangeText={text => handleScoreChange(playerIdx, holeIdx, text)}
+                      maxLength={2}
+                    />
+                  ))}
+                  <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
+                    {getTotal(scores[playerIdx], 0, 9)}
+                  </Text>
+                  <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
+                    {getTotal(scores[playerIdx], 9, 18)}
+                  </Text>
+                  <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
+                    {getTotal(scores[playerIdx], 0, 18)}
+                  </Text>
+                </View>               
+              ))}
+              {/* Skins Row */}
+              <View style={styles.row}>
+                <Text style={[styles.headerLeft, { width: NAME_WIDTH }]}>Skins</Text>
+                {skinsWinners.map((initials, idx) => (
+                  <Text key={idx} style={[styles.skins, { width: CELL_WIDTH }]}>
+                    {initials}
+                  </Text>
+                ))}
+                {/* Empty cells for F9, B9, Total */}
+                <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}></Text>
+                <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}></Text>
+                <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}></Text>
+              </View>
+              {/* Reset Button */}
+                <View style={{ marginTop: 16, alignItems: 'flex-start' }}>
+                  <Button title="Reset Scorecard" color="#d32f2f" onPress={resetGame} />
+                </View>
+            </View>
+          </ScrollView>
         </ScrollView>
       </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -117,7 +253,9 @@ const styles = StyleSheet.create({
   header: { fontWeight: 'bold', textAlign: 'center', padding: 4, backgroundColor: '#e0e0e0', borderWidth: 1, borderColor: '#ccc' },
   headerLeft: { fontWeight: 'bold', textAlign: 'left', padding: 4, backgroundColor: '#e0e0e0', borderWidth: 1, borderColor: '#ccc' },
   headerTotal: { fontWeight: 'bold', textAlign: 'center', padding: 4, backgroundColor: '#d0ffd0', borderWidth: 1, borderColor: '#ccc' },
+  yardage: { textAlign: 'center', padding: 4, backgroundColor: '#fffbe0', borderWidth: 1, borderColor: '#ccc' },
   par: { textAlign: 'center', padding: 4, backgroundColor: '#f0f0f0', borderWidth: 1, borderColor: '#ccc' },
   playerName: { fontWeight: 'bold', textAlign: 'left', padding: 4, backgroundColor: '#f0f8ff', borderWidth: 1, borderColor: '#ccc' },
   input: { borderWidth: 1, borderColor: '#ccc', margin: 0, textAlign: 'center', borderRadius: 4, padding: 4, backgroundColor: '#fff' },
+  skins: { textAlign: 'center', padding: 4, backgroundColor: '#e0f7fa', borderWidth: 1, borderColor: '#ccc', fontWeight: 'bold', color: '#00796b',},
 });

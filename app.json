@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Golf_Scorecard",
-    "slug": "Golf_Scorecard",
+    "name": "3-Under-Golf",
+    "slug": "3-Under-Golf",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
