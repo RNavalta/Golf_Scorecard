@@ -21,15 +21,9 @@ const WHITE_YARDAGES = [162, 166, 111, 162, 154, 140, 137, 120, 259, 273, 200, 1
 const CELL_WIDTH = 48; //width of each hole cell
 const NAME_WIDTH = 120; //width of player name cell
 const TOTAL_WIDTH = 60; //width of total score cell
-const STORAGE_KEY = 'golf_scorecard_state'; //key for AsyncStorage
 
-// export default function ScorecardScreen({ route }) { 
-//   const { players } = route.params;
-//   const [scores, setScores] = useState(
-//     players.map(() => Array(18).fill(''))
-//   );
 export default function ScorecardScreen({ route, navigation }) {
-  // Start with empty state
+  const saveKey = route.params?.saveKey;
   const [players, setPlayers] = useState(['', '', '', '']);
   const [scores, setScores] = useState([
     Array(18).fill(''),
@@ -45,18 +39,20 @@ export default function ScorecardScreen({ route, navigation }) {
     return () => {
       ScreenOrientation.unlockAsync();
     };
+    // eslint-disable-next-line
   }, []);
 
   // Save state whenever players or scores change
   useEffect(() => {
     saveGame();
+    // eslint-disable-next-line
   }, [players, scores]);
 
-  // Save to AsyncStorage
   const saveGame = async () => {
+    if (!saveKey) return;
     try {
       await AsyncStorage.setItem(
-        STORAGE_KEY,
+        saveKey,
         JSON.stringify({ players, scores })
       );
     } catch (e) {
@@ -64,40 +60,24 @@ export default function ScorecardScreen({ route, navigation }) {
     }
   };
 
-  // Load from AsyncStorage, or use route.params if no saved game
-  const loadGame = async () => {
+  // Load saved game state from AsyncStorage
+  // If saveKey is provided, it will load the game with that key
+   const loadGame = async () => {
+    if (!saveKey) return;
     try {
-      const value = await AsyncStorage.getItem(STORAGE_KEY);
+      const value = await AsyncStorage.getItem(saveKey);
       if (value !== null) {
         const saved = JSON.parse(value);
         setPlayers(saved.players);
         setScores(saved.scores);
-      } else if (route.params?.players) {
-        setPlayers(route.params.players);
-        setScores(route.params.players.map(() => Array(18).fill('')));
       }
     } catch (e) {
       console.log('Error loading game:', e);
     }
   };
 
-// Optional: Reset state and clear AsyncStorage
-  const resetGame = async () => {
-    await AsyncStorage.removeItem(STORAGE_KEY);
-    if (route.params?.players) {
-      setPlayers(route.params.players);
-      setScores(route.params.players.map(() => Array(18).fill('')));
-    } else {
-      setPlayers(['', '', '', '']);
-      setScores([
-        Array(18).fill(''),
-        Array(18).fill(''),
-        Array(18).fill(''),
-        Array(18).fill(''),
-      ]);
-    }
-  };
-
+  // Function to handle score changes
+  // This updates the scores array when a score is changed
   const handleScoreChange = (playerIdx, holeIdx, value) => {
     const newScores = scores.map(arr => [...arr]);
     newScores[playerIdx][holeIdx] = value.replace(/[^0-9]/g, '');
@@ -190,31 +170,44 @@ export default function ScorecardScreen({ route, navigation }) {
                   {PARS.reduce((a,b)=>a+b,0)}
                 </Text>
               </View>
+              
               {/* Player Rows */}
               {players.map((player, playerIdx) => (
                 <View key={playerIdx} style={styles.row}>
-                  <Text style={[styles.playerName, { width: NAME_WIDTH }]} numberOfLines={1} ellipsizeMode="tail">{player}</Text>
-                  {PARS.map((_, holeIdx) => (
-                    <TextInput
-                      key={holeIdx}
-                      style={[styles.input, { width: CELL_WIDTH }]}
-                      keyboardType="numeric"
-                      value={scores[playerIdx][holeIdx]}
-                      onChangeText={text => handleScoreChange(playerIdx, holeIdx, text)}
-                      maxLength={2}
-                    />
-                  ))}
-                  <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
-                    {getTotal(scores[playerIdx], 0, 9)}
-                  </Text>
-                  <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
-                    {getTotal(scores[playerIdx], 9, 18)}
-                  </Text>
-                  <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
-                    {getTotal(scores[playerIdx], 0, 18)}
-                  </Text>
-                </View>               
+                  <TextInput
+                    style={[styles.playerName, { width: NAME_WIDTH }]}
+                    value={player}
+                    onChangeText={text => {
+                      const newPlayers = [...players];
+                      newPlayers[playerIdx] = text;
+                      setPlayers(newPlayers);
+                    }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  placeholder={`Player ${playerIdx + 1}`}
+                />
+                {PARS.map((_, holeIdx) => (
+                  <TextInput
+                    key={holeIdx}
+                    style={[styles.input, { width: CELL_WIDTH }]}
+                    keyboardType="numeric"
+                    value={scores[playerIdx][holeIdx]}
+                    onChangeText={text => handleScoreChange(playerIdx, holeIdx, text)}
+                    maxLength={2}
+                  />
+                ))}
+                <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
+                  {getTotal(scores[playerIdx], 0, 9)}
+                </Text>
+                <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
+                  {getTotal(scores[playerIdx], 9, 18)}
+                </Text>
+                <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}>
+                  {getTotal(scores[playerIdx], 0, 18)}
+                </Text>
+               </View>
               ))}
+
               {/* Skins Row */}
               <View style={styles.row}>
                 <Text style={[styles.headerLeft, { width: NAME_WIDTH }]}>Skins</Text>
@@ -228,10 +221,7 @@ export default function ScorecardScreen({ route, navigation }) {
                 <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}></Text>
                 <Text style={[styles.headerTotal, { width: TOTAL_WIDTH }]}></Text>
               </View>
-              {/* Reset Button */}
-                <View style={{ marginTop: 16, alignItems: 'flex-start' }}>
-                  <Button title="Reset Scorecard" color="#d32f2f" onPress={resetGame} />
-                </View>
+
             </View>
           </ScrollView>
         </ScrollView>
