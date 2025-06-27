@@ -1,27 +1,24 @@
-import React, { useState, useCallback} from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { COURSES } from '../data/courses';
 
-const GAME1_KEY = 'CM_Saved_Game1';
-const GAME2_KEY = 'CM_Saved_Game2';
-
-export default function PlayerSetupScreen({ navigation }) {
+export default function PlayerSetupScreen({ navigation, route }) {
   const [players, setPlayers] = useState(['', '', '', '']);
   const [hasGame1, setHasGame1] = useState(false);
-  const [hasGame2, setHasGame2] = useState(false);  
+  const [hasGame2, setHasGame2] = useState(false);
 
-// Reset players when the screen is focused
-// This ensures that the player names are cleared when navigating back to this screen
-useFocusEffect(
-  React.useCallback(() => {
-    setPlayers(['', '', '', '']);
-  }, [])
- );
+  // Get the selected course key and initials
+  const courseKey = route.params?.courseKey || 'course1';
+  const courseInitials = COURSES[courseKey]?.initials || 'XX';
 
-// Check for saved games when the screen is focused
-// This ensures that the saved game status is updated when navigating back to this screen
- useFocusEffect(
+  // Build save keys using initials and course key
+  const GAME1_KEY = `${courseInitials}_Saved_Game1_${courseKey}`;
+  const GAME2_KEY = `${courseInitials}_Saved_Game2_${courseKey}`;
+
+  // Reset players and check for saved games for this course when focused
+  useFocusEffect(
     useCallback(() => {
       setPlayers(['', '', '', '']);
       const checkGames = async () => {
@@ -29,26 +26,25 @@ useFocusEffect(
         setHasGame2(!!(await AsyncStorage.getItem(GAME2_KEY)));
       };
       checkGames();
-    }, [])
+    }, [GAME1_KEY, GAME2_KEY])
   );
-  
-  // Function to handle player name changes
-  // This updates the players array when a player name is changed
+
+  // Handle player name changes
   const handleChange = (text, idx) => {
     const newPlayers = [...players];
     newPlayers[idx] = text;
     setPlayers(newPlayers);
   };
 
-//Function to handle starting a new game
-const handlePlayGolf = async () => {
+  // Handle starting a new game for this course
+  const handlePlayGolf = async () => {
     const game1 = await AsyncStorage.getItem(GAME1_KEY);
     const game2 = await AsyncStorage.getItem(GAME2_KEY);
 
     if (game1 && game2) {
       Alert.alert(
         'Cannot Start New Game',
-        'You already have two saved games. Please delete one before starting a new game.'
+        `You already have two saved games for ${COURSES[courseKey]?.name}. Please delete one before starting a new game.`
       );
       return;
     }
@@ -63,28 +59,29 @@ const handlePlayGolf = async () => {
 
     await AsyncStorage.setItem(
       saveKey,
-      JSON.stringify({ players: filteredPlayers, scores: filteredPlayers.map(() => Array(18).fill('')) })
+      JSON.stringify({ players: filteredPlayers, scores: filteredPlayers.map(() => Array(18).fill('')), courseKey })
     );
-    navigation.navigate('Scorecard', { saveKey });
+    navigation.navigate('Scorecard', { saveKey, courseKey });
   };
 
-  // Function to handle continuing a saved game
-  // This navigates to the Scorecard screen with the saveKey of the selected game
+  // Handle continuing a saved game for this course
   const handleContinue = (saveKey) => {
-    navigation.navigate('Scorecard', { saveKey });
+    navigation.navigate('Scorecard', { saveKey, courseKey });
   };
 
-  // Function to handle deleting a saved game
-  // This removes the saved game from AsyncStorage and updates the state
+  // Handle deleting a saved game for this course
   const handleDelete = async (saveKey) => {
     await AsyncStorage.removeItem(saveKey);
     setHasGame1(!!(await AsyncStorage.getItem(GAME1_KEY)));
     setHasGame2(!!(await AsyncStorage.getItem(GAME2_KEY)));
   };
 
-   return (
+  return (
     <View style={styles.container}>
       <Text style={styles.title}>Enter Player Names</Text>
+      <Text style={styles.courseName}>
+        Course: {COURSES[courseKey]?.name || 'Unknown'}
+      </Text>
       {players.map((player, idx) => (
         <TextInput
           key={idx}
@@ -113,8 +110,7 @@ const handlePlayGolf = async () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, marginBottom: 16 },
+  title: { fontSize: 24, marginBottom: 8 },
+  courseName: { fontSize: 18, marginBottom: 16, color: '#00796b' },
   input: { borderWidth: 1, width: 200, margin: 8, padding: 8, borderRadius: 5 },
 });
-
-  
