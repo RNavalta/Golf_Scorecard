@@ -2,12 +2,12 @@
 // This screen allows users to select a golf course from a list.
 // It uses the COURSES data to display available courses and navigates to PlayerSetup with the selected course key.
 import React from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet, ScrollView } from 'react-native';
 import { COURSES } from '../data/courses';
 
 export default function CourseSelectionScreen({ navigation }) {
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Select a Golf Course</Text>
       {Object.entries(COURSES).map(([key, course]) => (
         <View key={key} style={styles.courseButton}>
@@ -17,7 +17,7 @@ export default function CourseSelectionScreen({ navigation }) {
           />
         </View>
       ))}
-    </View>
+    </ScrollView>
   );
 }
 

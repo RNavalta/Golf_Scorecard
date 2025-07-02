@@ -19,9 +19,9 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="CourseSelection" component={CourseSelectionScreen} />
-        <Stack.Screen name="PlayerSetup" component={PlayerSetupScreen} />
-        <Stack.Screen name="Scorecard" component={ScorecardScreen} />
+        <Stack.Screen name="CourseSelection" component={CourseSelectionScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="PlayerSetup" component={PlayerSetupScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Scorecard" component={ScorecardScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

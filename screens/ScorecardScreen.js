@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Button } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { COURSES } from '../data/courses';
@@ -73,6 +73,7 @@ export default function ScorecardScreen({ route, navigation }) {
     setScores(newScores);
   };
 
+  // Calculate total score for a player
   const getTotal = (arr, start, end) =>
     arr.slice(start, end).reduce((sum, val) => sum + (parseInt(val) || 0), 0);
 
@@ -98,6 +99,7 @@ export default function ScorecardScreen({ route, navigation }) {
     });
   };
 
+  // Get skins winners for the current game
   const skinsWinners = getSkinsWinners();
 
   return (

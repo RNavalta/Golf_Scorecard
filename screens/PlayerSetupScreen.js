@@ -1,8 +1,12 @@
+//This screen allows users to set up player names for a golf game, check for saved games, and start or continue games.
+// It uses AsyncStorage to manage saved game data and provides functionality to enter player names, start a new game, continue saved games, and delete saved games.
+// It also dynamically builds save keys based on the selected course and player initials, ensuring that saved games are organized by course and player initials.
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { COURSES } from '../data/courses';
+
 
 export default function PlayerSetupScreen({ navigation, route }) {
   const [players, setPlayers] = useState(['', '', '', '']);
@@ -11,7 +15,7 @@ export default function PlayerSetupScreen({ navigation, route }) {
 
   // Get the selected course key and initials
   const courseKey = route.params?.courseKey || 'course1';
-  const courseInitials = COURSES[courseKey]?.initials || 'XX';
+  const courseInitials = COURSES[courseKey]?.initials || 'XX'; 
 
   // Build save keys using initials and course key
   const GAME1_KEY = `${courseInitials}_Saved_Game1_${courseKey}`;
@@ -49,14 +53,16 @@ export default function PlayerSetupScreen({ navigation, route }) {
       return;
     }
 
+    // Filter out empty player names
     const filteredPlayers = players.filter(name => name.trim() !== '');
     if (filteredPlayers.length === 0) {
       Alert.alert('Please enter at least one player name.');
       return;
     }
 
-    const saveKey = !game1 ? GAME1_KEY : GAME2_KEY;
-
+    const saveKey = !game1 ? GAME1_KEY : GAME2_KEY;// if game1 exists, use game2 key
+    
+    // Save the game with player names and empty scores
     await AsyncStorage.setItem(
       saveKey,
       JSON.stringify({ players: filteredPlayers, scores: filteredPlayers.map(() => Array(18).fill('')), courseKey })
@@ -70,14 +76,25 @@ export default function PlayerSetupScreen({ navigation, route }) {
   };
 
   // Handle deleting a saved game for this course
-  const handleDelete = async (saveKey) => {
+  const handleDelete = (saveKey) => {
+  const doDelete = async () => {
     await AsyncStorage.removeItem(saveKey);
     setHasGame1(!!(await AsyncStorage.getItem(GAME1_KEY)));
     setHasGame2(!!(await AsyncStorage.getItem(GAME2_KEY)));
   };
 
+  Alert.alert(
+    'Delete Saved Game',
+    'Are you sure you want to delete this saved game? This action cannot be undone.',
+    [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: doDelete }
+    ]
+  );
+};
+
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Enter Player Names</Text>
       <Text style={styles.courseName}>
         Course: {COURSES[courseKey]?.name || 'Unknown'}
@@ -104,13 +121,13 @@ export default function PlayerSetupScreen({ navigation, route }) {
           <Button title="Delete Saved Game 2" onPress={() => handleDelete(GAME2_KEY)} color="#d32f2f" />
         </View>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, marginBottom: 8 },
+  container: { alignItems: 'center', paddingVertical: 24, paddingTop: 48 },
+  title: { fontSize: 24, marginBottom: 8, marginTop: 48 },
   courseName: { fontSize: 18, marginBottom: 16, color: '#00796b' },
   input: { borderWidth: 1, width: 200, margin: 8, padding: 8, borderRadius: 5 },
 });
