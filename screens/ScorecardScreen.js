@@ -39,6 +39,10 @@ export default function ScorecardScreen({ route, navigation }) {
   }, [players, scores]);
 
   // Save game state to AsyncStorage
+  //So that the score card can be resumed later
+  //This is useful for long games where you might want to take a break and come back
+  //navigating back to the scorecard screen will load the saved game
+  //and allow you to continue where you left off
   const saveGame = async () => {
     if (!saveKey) return;
     try {
