@@ -13,8 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-       "bundleIdentifier": "com.coolrainbc.3undergolf",
-       "supportsTablet": true
+      "bundleIdentifier": "com.coolrainbc.3undergolf",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -25,6 +28,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7291c1c8-bb9c-4657-ad89-e521b2c133db"
+      }
     }
   }
 }

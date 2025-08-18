@@ -2,17 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { COURSES } from '../data/courses';
+import { CourseInfoCard } from '../component/CourseInfoCard';
 
 export default function ScorecardScreen({ route, navigation }) {
-  // Get courseKey and saveKey from navigation params
-  const courseKey = route.params?.courseKey || 'course1';
+  // Get courseKey, courseData, and saveKey from navigation params
+  const courseKey = route.params?.courseKey || 'unknown';
+  const courseData = route.params?.courseData;
   const saveKey = route.params?.saveKey;
 
-  // Get course data
-  const course = COURSES[courseKey];
-  const PARS = course.pars;
-  const WHITE_YARDAGES = course.yardages;
+  // Get course data (API course data is required now)
+  const course = courseData;
+  if (!course) {
+    console.error('No course data provided to ScorecardScreen');
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Course data not found. Please select a course again.</Text>
+      </View>
+    );
+  }
+  
+  const PARS = course?.pars || Array(18).fill(4);
+  const WHITE_YARDAGES = course?.yardages || Array(18).fill(300);
 
   const [players, setPlayers] = useState(['', '', '', '']);
   const [scores, setScores] = useState([
@@ -117,10 +127,9 @@ export default function ScorecardScreen({ route, navigation }) {
           <ScrollView horizontal>
             <ScrollView style={{ maxHeight: '100%' }}>
               <View style={styles.outerContainer}>
-                {/* Show course name */}
-                <Text style={{fontSize: 20, fontWeight: 'bold', textAlign: 'center', margin: 8}}>
-                  {course.name}
-                </Text>
+                {/* Course Information */}
+                <CourseInfoCard course={course} style={styles.courseInfo} />
+                
                 {/* Header Row: Hole Numbers */}
                 <View style={styles.row}>
                   <Text style={[styles.headerLeft, { width: NAME_WIDTH }]}>Tee</Text>
@@ -230,8 +239,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#d32f2f',
+    textAlign: 'center',
+  },
   outerContainer: {
     marginLeft: 12,
+  },
+  courseInfo: {
+    marginBottom: 10,
+    maxWidth: 400,
   },
   row: { flexDirection: 'row', alignItems: 'center' },
   header: { fontWeight: 'bold', textAlign: 'center', padding: 4, backgroundColor: '#e0e0e0', borderWidth: 1, borderColor: '#ccc' },

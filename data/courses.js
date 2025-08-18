@@ -1,27 +1,52 @@
 export const COURSES = {
   course1: {
     name: "Country Meadows",
+    streetAddress: "8400 No 6 Rd",   
+    City: "Richmond",
+    Province: "BC",
+    country: "Canada",
     pars: [3,3,3,3,3,3,3,3,4, 4,3,3,3,4,3,3,3,4],
-    yardages: [162, 166, 111, 162, 154, 140, 137, 120, 259, 273, 200, 154, 164, 218, 87, 176, 134, 340]
+  yardages: [162, 166, 111, 162, 154, 140, 137, 120, 259, 273, 200, 154, 164, 218, 87, 176, 134, 340],
+  rating: 3.8
   },
   course2: {
     name: "Savage Creek",
+    streetAddress: "7388 No 6 Rd",
+    City: "Richmond",
+    Province: "BC",
+    country: "Canada",
     pars: [4,4,3,3,3,3,3,3,4,4,5,4,3,4,4,4,0,0],
-    yardages: [261, 303, 117, 221, 97, 147, 184, 120, 301, 273, 357, 254, 194, 279, 291, 249, 0, 0]
+  yardages: [261, 303, 117, 221, 97, 147, 184, 120, 301, 273, 357, 254, 194, 279, 291, 249, 0, 0],
+  rating: 4.2
   },
   course3: {
     name: "Green Acres",
+    streetAddress: "5040 No 6 Rd",  
+    City: "Richmond",
+    Province: "BC",
+    country: "Canada",
     pars: [4,4,4,3,4,5,3,4,4,4,5,4,4,4,3,4,3,5],
-    yardages: [293, 377, 400, 190, 330, 448, 168, 298, 338, 383, 521, 426, 403, 385, 122, 360, 167, 413]
+  yardages: [293, 377, 400, 190, 330, 448, 168, 298, 338, 383, 521, 426, 403, 385, 122, 360, 167, 413],
+  rating: 3.5
   },
   course4: {
     name: "Delta",
+    streetAddress: "11550 Ladner Trunk Rd",
+    City: "Delta",
+    Province: "BC",
+    country: "Canada",
     pars: [4,3,5,3,3,4,4,4,4,5,4,3,3,5,3,4,3,4],
-    yardages: [298, 146, 467, 154, 107, 375, 322, 388, 325, 442, 285, 168, 105, 431, 202, 257, 121, 340]
+  yardages: [298, 146, 467, 154, 107, 375, 322, 388, 325, 442, 285, 168, 105, 431, 202, 257, 121, 340],
+  rating: 4.0
   },
   course5: {
     name: "Guildford",
+    streetAddress: "7929 152 St",
+    City: "Surrey",
+    Province: "BC",
+    country: "Canada",
     pars: [4,3,4,4,5,3,5,4,4,4,5,4,4,5,4,3,3,4],
-    yardages: [357, 150, 325, 342, 455, 98, 490, 363, 407, 369, 430, 350, 312, 417, 331, 105, 143, 315]
+  yardages: [357, 150, 325, 342, 455, 98, 490, 363, 407, 369, 430, 350, 312, 417, 331, 105, 143, 315],
+  rating: 4.4
   },
 };
